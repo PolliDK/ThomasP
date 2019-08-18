@@ -1,0 +1,144 @@
+<?php
+// Variabler
+$firstname = "".$_POST['firstname']."";
+$birstdate    = "".$_POST['birstdate']."";
+$username = "".$_POST['username']."";
+$email = "".$_POST['email']."";
+$password_1 = "".$_POST['password']."";
+$password_2 = "".$password['password']."";
+$steam = "".$_POST['steam']."";
+$whyus    = "".$_POST['whyus']."";
+$errors = array(); 
+
+
+// Registere brugeren i databasen
+if (isset($_POST['anoeg'])) {
+  // modtage alle inputværdier fra formularen
+  $firstname = mysqli_real_escape_string($register_user, $_POST['firstname']);
+  $birstdate = mysqli_real_escape_string($register_user, $_POST['birstdate']);
+  $username = mysqli_real_escape_string($register_user, $_POST['username']);
+  $email = mysqli_real_escape_string($register_user, $_POST['email']);
+  $password_1 = mysqli_real_escape_string($register_user, $_POST['password_1']);
+  $password_2 = mysqli_real_escape_string($register_user, $_POST['password_2']);
+  $steam = mysqli_real_escape_string($register_user, $_POST['steam']);
+  $whyus = mysqli_real_escape_string($register_user, $_POST['whyus']);
+  $searched_date = date('d/m/Y h:i:s');
+  $searched_ip = $_SERVER['REMOTE_ADDR'];
+  $browser = $_SERVER['HTTP_USER_AGENT'];
+
+  // formvalidering: Sørg for, at formularen er korrekt udfyldt ...
+  // ved at tilføje (array_push ()) tilsvarende fejl til $ error array
+  if (empty($firstname)) { array_push($errors, "Fornavn er påkrævet"); }
+  if (empty($birstdate)) { array_push($errors, "Fødselsdato er påkrævet"); }
+  if (empty($username)) { array_push($errors, "Brugernavn er påkrævet"); }
+  if (empty($email)) { array_push($errors, "Email er påkrævet"); }
+  if (empty($password_1)) { array_push($errors, "Kodeord er påkrævet"); }
+  if ($password_1 != $password_2) {
+	array_push($errors, "De to adgangskoder stemmer ikke overens");
+  }
+  if (empty($steam)) { array_push($errors, "Steam er påkrævet"); }
+  if (empty($whyus)) { array_push($errors, "Brugernavn er påkrævet"); }
+
+  // Først vil vi lige sikre os at den nye bruger ikke eksisterer i forvejen med brugernavnet og email-adressen.
+  // Vi tillader brugere at kunne oprette sig med en ip-adresse der eksisterer i databasen i forvejen. 
+  // Da vi ikke ved om det er en offenlig pc.
+  $user_check_query = "SELECT * FROM `tp_brugere_anmodning` WHERE username='".$username."' OR email='".$email."' LIMIT 1";
+  $result = mysqli_query($register_user, $user_check_query);
+  $user = mysqli_fetch_assoc($result);
+  
+  if ($user) { // Hvis brugernavn eller email-adresse eksisterer i forvejen, meddeler vi dette.
+    if ($user['username'] === $username) {
+      array_push($errors, "Brugernavnet er optaget.");
+    }
+
+    if ($user['email'] === $email) {
+      array_push($errors, "Email-adressen er registeret af en anden.");
+    }
+  }
+
+  // Er der 0 fejl, alt lever op til de krav tablen kræver, så opretter vi brugeren herunder.
+  if (count($errors) == 0) {
+  	$password = md5($password_1);//Kryptere koden inden vi gemmer i databasen.
+
+  	$query = "INSERT INTO `tp_brugere_anmodning` (firsname, birstdate, username, email, password, steam, whyus, searched_date, searched_ip, browser) 
+  			  VALUES('$firsname', '$birstdate', '$username', '$email', '$password', '$steam', '$whyus.', '$searched_date','$searched_ip','$browser')";
+  	mysqli_query($register_user, $query);
+  	$_SESSION['username'] = $username;
+  	$_SESSION['success'] = "Du er nu logget ind!";
+  	//header('location: index.php');
+  }
+}
+?>
+
+<style>
+.error {
+  width: auto; 
+  margin: 0px auto; 
+  padding: 10px; 
+  border: 1px solid #a94442; 
+  color: #a94442; 
+  background: #f2dede; 
+  border-radius: 5px; 
+  text-align: left;
+}
+.success {
+  color: #3c763d; 
+  background: #dff0d8; 
+  border: 1px solid #3c763d;
+  margin-bottom: 20px;
+}
+</style>
+
+
+        	<h1>Ansøg medlemskab</h1>
+            <div class="content_half float_l">
+                <p>* Alle felter skal udfyldes korrekt *</p>
+                <div id="contact_form">
+<?php  if (count($errors) > 0) : ?>
+<div class="error">
+<?php foreach ($errors as $error) : ?>
+<p><?php echo $error ?></p>
+<?php endforeach ?>
+</div>
+<?php  endif ?>	
+                  <form method="post" name="anoeg" >
+                        <label for="phone">Fornavn:</label> <input type="text" name="firstname" id="fdate" class="input_field" />
+                        <div class="cleaner h10"></div>	
+
+                        <label for="phone">Fødselsdato:</label> <input type="date" min="1959-01-02" max="2015-12-31" name="birstdate" id="fdate" class="input_field" />
+                        <div class="cleaner h10"></div>					   
+                        
+                        <label for="author">Brugernavn:</label> <input type="text" id="author" name="username" value="<?php echo $username; ?>" class="input_field" />
+                        <div class="cleaner h10"></div>
+                        <label for="email">Email-adresse:</label> <input type="text" id="email" name="email" value="<?php echo $email; ?>"  class="validate-email required input_field" />
+                        <div class="cleaner h10"></div>
+						
+                        <label for="phone">Kodeord:</label> <input type="password" name="password_1" id="password" class="input_field" />
+                        <div class="cleaner h10"></div>
+						
+                        <label for="phone">Kodeord: gentag</label> <input type="password" name="password_2" id="password" class="input_field" />
+                        <div class="cleaner h10"></div>						
+                        
+                        <label for="phone">Steam:</label> <input type="text" name="steam" id="steam" class="input_field" />
+                        <div class="cleaner h10"></div>
+        
+                        <label for="text">Hvorfor lige os:</label> <textarea id="text" name="whyus" rows="0" cols="0" class="required"></textarea>
+                        <div class="cleaner h10"></div>
+						                   						
+                        
+                        <input type="submit" class="submit_btn" name="anoeg" id="submit" value="Ansøg" />
+                        
+                    </form>
+                </div>
+            </div>
+        <div class="content_half float_r">
+        	<h5>Kontigent</h5>
+			Bla bla.<br/>
+			
+            <div class="cleaner h40"></div>
+			
+            <h5>Ansøgning proces</h5>
+			bla bla
+        </div>
+        
+        <div class="cleaner h40"></div>
